@@ -1,0 +1,63 @@
+spring:
+  # Jackson Configuration
+  jackson:
+    serialization.indent_output: true
+  # Datasource Configuration
+  datasource:
+    name: CAM RDBMS Database Connection
+    # driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/cam-history?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=CET&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    # Hikari CP Configuration
+    hikari:
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+  # Java Persistence API Configuration
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLInnoDBDialect
+    database: MYSQL
+    show-sql: true
+    open-in-view: false
+    # Hibernate Properties
+    properties:
+      hibernate.cache.use_second_level_cache: false
+      hibernate.cache.use_query_cache: false
+      hibernate.generate_statistics: false
+      hibernate.show_sql: true
+      hibernate.SQL: true
+# API context path configuration
+server:
+  servlet:
+    context-path: /api
+
+# Logging configuration
+logging:
+  level:
+    org.camunda: DEBUG
+    com.hedza06.camtask: INFO
+#    org.hibernate: TRACE
+
+# CAM BPM Configuration
+camunda:
+  bpm:
+    id-generator: simple
+    auto-deployment-enabled: true
+    application:
+      deploy-changed-only: true
+    admin-user:
+      id: admin
+      password: admin677
+      first-name: Administrator
+    filter:
+      create: All tasks
+    history-level: "event-history"
+    database:
+      schema-update: true
+      type: mysql
+
+debug: false
