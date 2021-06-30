@@ -5,8 +5,8 @@ spring:
   # Datasource Configuration
   datasource:
     name: CAM RDBMS Database Connection
-    # driver-class-name: com.mysql.jdbc.Driver
     driver-class-name: com.mysql.jdbc.Driver
+#    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/cam-history?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=CET&allowPublicKeyRetrieval=true
     username: root
     password: root
