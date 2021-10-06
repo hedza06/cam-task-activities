@@ -47,14 +47,10 @@ public class CustomTaskActivityService {
     public void processProcessInstanceEvent(HistoryEvent historyEvent)
     {
         HistoricProcessInstanceEventEntity instanceEventEntity = (HistoricProcessInstanceEventEntity) historyEvent;
-        String migrateEvent = HistoryEventTypes.PROCESS_INSTANCE_MIGRATE.getEventName();
-        if (!instanceEventEntity.getEventType().equals(migrateEvent))
-        {
-            updateHistoricTaskSuperProcessInstance(
-                instanceEventEntity.getProcessInstanceId(),
-                instanceEventEntity.getSuperProcessInstanceId()
-            );
-        }
+        updateHistoricTaskSuperProcessInstance(
+            instanceEventEntity.getProcessInstanceId(),
+            instanceEventEntity.getSuperProcessInstanceId()
+        );
     }
 
     /**
