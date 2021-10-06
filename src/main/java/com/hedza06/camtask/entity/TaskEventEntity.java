@@ -54,6 +54,9 @@ public class TaskEventEntity implements Serializable {
     @Column(name = "process_instance_id", nullable = false)
     private String processInstanceId;
 
+    @Column(name = "super_process_instance_id")
+    private String superProcessInstanceId;
+
     @NotNull
     @NotEmpty
     @NotBlank
@@ -92,10 +95,12 @@ public class TaskEventEntity implements Serializable {
 
     @Column(name = "customer_general_data")
     @Convert(converter = JsonConverter.class)
+    @SuppressWarnings("java:S1948")
     private Map<String, Object> customerGeneralData = new HashMap<>();
 
     @Column(name = "product_general_data")
     @Convert(converter = JsonConverter.class)
+    @SuppressWarnings("java:S1948")
     private Map<String, Object> productGeneralData = new HashMap<>();
 
     @Column(name = "start_time", nullable = false)

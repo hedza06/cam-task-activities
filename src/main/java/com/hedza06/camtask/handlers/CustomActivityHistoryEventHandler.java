@@ -1,6 +1,7 @@
 package com.hedza06.camtask.handlers;
 
 import com.hedza06.camtask.services.CustomTaskActivityService;
+import org.camunda.bpm.engine.impl.history.event.HistoricProcessInstanceEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoricTaskInstanceEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoryEvent;
@@ -26,6 +27,10 @@ public class CustomActivityHistoryEventHandler implements HistoryEventHandler {
 
         if (historyEvent instanceof HistoricVariableUpdateEventEntity) {
             customTaskActivityService.processVariableUpdateEvent(historyEvent);
+        }
+
+        if (historyEvent instanceof HistoricProcessInstanceEventEntity) {
+            customTaskActivityService.processProcessInstanceEvent(historyEvent);
         }
     }
 

@@ -5,6 +5,7 @@ CREATE TABLE `cam-history`.`task_event` (
   `process_definition_key` VARCHAR(255) NOT NULL,
   `process_definition_name` VARCHAR(255) NOT NULL,
   `process_instance_id` VARCHAR(255) NOT NULL,
+  `super_process_instance_id` VARCHAR(255) NULL NOT NULL,
   `execution_id` VARCHAR(255) NOT NULL,
   `task_instance_id` VARCHAR(255) NOT NULL,
   `task_id` VARCHAR(255) NOT NULL,

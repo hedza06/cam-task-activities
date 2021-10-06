@@ -9,4 +9,7 @@ public interface CustomTaskActivityRepository extends JpaRepository<TaskEventEnt
 {
     TaskEventEntity findByExecutionIdAndTaskId(String executionId, String taskId);
     TaskEventEntity findFirstByProcessInstanceId(String processInstanceId);
+    TaskEventEntity findFirstByProcessInstanceIdOrSuperProcessInstanceId(
+        String processInstanceId, String superProcessInstanceId
+    );
 }

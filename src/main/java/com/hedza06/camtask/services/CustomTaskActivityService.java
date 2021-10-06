@@ -8,9 +8,11 @@ import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.ProcessEngines;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.TaskService;
+import org.camunda.bpm.engine.impl.history.event.HistoricProcessInstanceEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoricTaskInstanceEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoricVariableUpdateEventEntity;
 import org.camunda.bpm.engine.impl.history.event.HistoryEvent;
+import org.camunda.bpm.engine.impl.history.event.HistoryEventTypes;
 import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.task.IdentityLink;
 import org.camunda.bpm.engine.task.IdentityLinkType;
@@ -36,6 +38,24 @@ public class CustomTaskActivityService {
     @Autowired
     private CustomTaskActivityRepository customTaskActivityRepository;
 
+
+    /**
+     * Processing process instance events | excluding migrate events because of performance issues
+     *
+     * @param historyEvent history process event
+     */
+    public void processProcessInstanceEvent(HistoryEvent historyEvent)
+    {
+        HistoricProcessInstanceEventEntity instanceEventEntity = (HistoricProcessInstanceEventEntity) historyEvent;
+        String migrateEvent = HistoryEventTypes.PROCESS_INSTANCE_MIGRATE.getEventName();
+        if (!instanceEventEntity.getEventType().equals(migrateEvent))
+        {
+            updateHistoricTaskSuperProcessInstance(
+                instanceEventEntity.getProcessInstanceId(),
+                instanceEventEntity.getSuperProcessInstanceId()
+            );
+        }
+    }
 
     /**
      * Processing variable update historic event
@@ -107,10 +127,10 @@ public class CustomTaskActivityService {
     private void handleTaskInstanceEventBasedOnEventType(HistoricTaskInstanceEventEntity historicTaskInstance,
                                                          String eventType)
     {
-        if (eventType.equals("create")) {
+        if (eventType.equals(HistoryEventTypes.TASK_INSTANCE_CREATE.getEventName())) {
             createTaskEventEntity(historicTaskInstance);
         }
-        else if (eventType.equals("complete")) {
+        else if (eventType.equals(HistoryEventTypes.TASK_INSTANCE_COMPLETE.getEventName())) {
             completeTaskEventEntity(historicTaskInstance);
         }
     }
@@ -224,16 +244,53 @@ public class CustomTaskActivityService {
         Map<String, Long> vars = (Map<String, Long>) variableMapping.get(processInstanceId);
         if (vars != null && !vars.isEmpty())
         {
-            taskEventEntity.setCustomerId(vars.get(CUSTOMER_ID));
+            taskEventEntity.setCustomerId(
+                getCustomerIdFromSourceIfNotExists(vars.get(CUSTOMER_ID), processInstanceId)
+            );
             taskEventEntity.setProductId(vars.get(PRODUCT_ID));
         }
         else
         {
-            TaskEventEntity storedTaskEntity
-                = customTaskActivityRepository.findFirstByProcessInstanceId(processInstanceId);
+            TaskEventEntity storedTaskEntity = customTaskActivityRepository
+                .findFirstByProcessInstanceIdOrSuperProcessInstanceId(processInstanceId, processInstanceId);
 
             taskEventEntity.setCustomerId(storedTaskEntity.getCustomerId());
             taskEventEntity.setProductId(storedTaskEntity.getProductId());
+        }
+    }
+
+    /**
+     * Getting customer identifier from source if not exists in variable mapping
+     *
+     * @param customerId customer identifier
+     * @param processInstanceId process instance identifier
+     * @return Long value of customer id
+     */
+    private Long getCustomerIdFromSourceIfNotExists(Long customerId, String processInstanceId)
+    {
+        if (customerId == null)
+        {
+            TaskEventEntity taskEventEntity = customTaskActivityRepository
+                .findFirstByProcessInstanceIdOrSuperProcessInstanceId(processInstanceId, processInstanceId);
+
+            return taskEventEntity.getCustomerId();
+        }
+        return customerId;
+    }
+
+    /**
+     * Updating super process instance of historic task if exists
+     *
+     * @param processInstanceId process instance identifier
+     * @param superProcessInstanceId super process instance identifier
+     */
+    private void updateHistoricTaskSuperProcessInstance(String processInstanceId, String superProcessInstanceId)
+    {
+        TaskEventEntity historicTaskEvent = customTaskActivityRepository.findFirstByProcessInstanceId(processInstanceId);
+        if (historicTaskEvent != null)
+        {
+            historicTaskEvent.setSuperProcessInstanceId(superProcessInstanceId);
+            customTaskActivityRepository.save(historicTaskEvent);
         }
     }
 }
