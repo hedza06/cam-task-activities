@@ -1,6 +1,8 @@
 package com.hedza06.camtask.services;
 
+import com.hedza06.camtask.constants.VariableConstant;
 import com.hedza06.camtask.entity.TaskEventEntity;
+import com.hedza06.camtask.entity.VariableStoreEntity;
 import com.hedza06.camtask.repository.CustomTaskActivityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -24,19 +26,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class CustomTaskActivityService {
 
-    private static final String CUSTOMER_ID = "customerId";
-    private static final String PRODUCT_ID  = "productId";
-
-    private final Map<String, Object> variableMapping = new HashMap<>();
+    private final Map<String, Object> variableMapping = new ConcurrentHashMap<>();
 
     @Autowired
     private CustomTaskActivityRepository customTaskActivityRepository;
+
+    @Autowired
+    private CustomVariableStoreService variableStoreService;
 
 
     /**
@@ -64,9 +67,14 @@ public class CustomTaskActivityService {
         {
             HistoricVariableUpdateEventEntity variableEventEntity = (HistoricVariableUpdateEventEntity) historyEvent;
             String variableName = variableEventEntity.getVariableName();
-            if (variableName.equals(CUSTOMER_ID) || variableName.equals(PRODUCT_ID))
+            if (variableName.equals(VariableConstant.CUSTOMER_ID) || variableName.equals(VariableConstant.PRODUCT_ID))
             {
                 appendVariableIdToVariableMap(
+                    variableName,
+                    variableEventEntity.getLongValue(),
+                    variableEventEntity.getProcessInstanceId()
+                );
+                saveVariableStateToStore(
                     variableName,
                     variableEventEntity.getLongValue(),
                     variableEventEntity.getProcessInstanceId()
@@ -115,6 +123,24 @@ public class CustomTaskActivityService {
     }
 
     /**
+     * Saving variable state to variable store
+     *
+     * @param name variable name
+     * @param value variable value
+     * @param processInstanceId process instance identifier
+     */
+    private void saveVariableStateToStore(String name, Long value, String processInstanceId)
+    {
+        VariableStoreEntity variableStore = variableStoreService.findByProcessInstance(processInstanceId);
+        if (variableStore != null) {
+            variableStoreService.updateStoreBasedOnVariableName(variableStore, name, value);
+        }
+        else {
+            variableStoreService.persistToVariableStore(name, value, processInstanceId);
+        }
+    }
+
+    /**
      * Handling task instance event based on event type
      *
      * @param historicTaskInstance historic task instance
@@ -156,6 +182,7 @@ public class CustomTaskActivityService {
 
         fetchCustomerAndProductRelevantData(taskEventEntity, historicTaskInstance);
         variableMapping.remove(historicTaskInstance.getProcessInstanceId());
+        variableStoreService.deleteByProcessInstance(historicTaskInstance.getProcessInstanceId());
 
         customTaskActivityRepository.save(taskEventEntity);
     }
@@ -241,17 +268,16 @@ public class CustomTaskActivityService {
         if (vars != null && !vars.isEmpty())
         {
             taskEventEntity.setCustomerId(
-                getCustomerIdFromSourceIfNotExists(vars.get(CUSTOMER_ID), processInstanceId)
+                getCustomerIdFromSourceIfNotExists(vars.get(VariableConstant.CUSTOMER_ID), processInstanceId)
             );
-            taskEventEntity.setProductId(vars.get(PRODUCT_ID));
+            taskEventEntity.setProductId(vars.get(VariableConstant.PRODUCT_ID));
         }
         else
         {
             TaskEventEntity storedTaskEntity = customTaskActivityRepository
                 .findFirstByProcessInstanceIdOrSuperProcessInstanceId(processInstanceId, processInstanceId);
 
-            taskEventEntity.setCustomerId(storedTaskEntity.getCustomerId());
-            taskEventEntity.setProductId(storedTaskEntity.getProductId());
+            populateCustomerAndProductIdentifier(storedTaskEntity, taskEventEntity, processInstanceId);
         }
     }
 
@@ -272,6 +298,30 @@ public class CustomTaskActivityService {
             return taskEventEntity.getCustomerId();
         }
         return customerId;
+    }
+
+    /**
+     * Getting customer and product identifiers from variable store
+     *
+     * @param storedTaskEntity stored task entity
+     * @param taskEventEntity transient task entity
+     * @param processInstanceId process instance identifier
+     */
+    private void populateCustomerAndProductIdentifier(TaskEventEntity storedTaskEntity,
+                                                      TaskEventEntity taskEventEntity,
+                                                      String processInstanceId)
+    {
+        if (storedTaskEntity != null)
+        {
+            taskEventEntity.setCustomerId(storedTaskEntity.getCustomerId());
+            taskEventEntity.setProductId(storedTaskEntity.getProductId());
+        }
+        else
+        {
+            VariableStoreEntity variableStore = variableStoreService.findByProcessInstance(processInstanceId);
+            taskEventEntity.setCustomerId(variableStore.getCustomerId());
+            taskEventEntity.setProductId(variableStore.getProductId());
+        }
     }
 
     /**

@@ -18,4 +18,14 @@ CREATE TABLE `cam-history`.`task_event` (
   `product_general_data` JSON NULL,
   `start_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end_time` DATETIME NULL DEFAULT NULL,
-  PRIMARY KEY (`id`));
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `cam-history`.`historic_task_variable_store` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `process_instance_id` varchar(255) COLLATE utf8_slovenian_ci NOT NULL,
+  `customer_id` bigint(20) DEFAULT NULL,
+  `product_id` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_historic_task_variable_store_process_inst_id` (`process_instance_id`)
+);
