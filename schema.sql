@@ -21,11 +21,11 @@ CREATE TABLE `cam-history`.`task_event` (
   PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `cam-history`.`historic_task_variable_store` (
+CREATE TABLE `cam-history`.`historic_variable_store` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `process_instance_id` varchar(255) COLLATE utf8_slovenian_ci NOT NULL,
   `customer_id` bigint(20) DEFAULT NULL,
   `product_id` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_historic_task_variable_store_process_inst_id` (`process_instance_id`)
+  KEY `idx_historic_variable_store_process_inst_id` (`process_instance_id`)
 );

@@ -17,7 +17,7 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
-@Table(name = "variable_store")
+@Table(name = "historic_variable_store")
 @DynamicInsert
 @DynamicUpdate
 @NoArgsConstructor
