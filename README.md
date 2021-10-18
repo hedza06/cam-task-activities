@@ -31,6 +31,16 @@ CREATE TABLE `cam-history`.`task_event` (
   `start_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `end_time` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id`));
+  
+  
+CREATE TABLE `cam-history`.`historic_task_variable_store` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `process_instance_id` varchar(255) COLLATE utf8_slovenian_ci NOT NULL,
+  `customer_id` bigint(20) DEFAULT NULL,
+  `product_id` bigint(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_historic_task_variable_store_process_inst_id` (`process_instance_id`)
+);
 ```
 
 ### Test process
@@ -39,6 +49,16 @@ The process can be started using Camunda Web App. After process start, the token
 At that time, you can check the table `task_event` - task will be registered with all additional data in it.
 
 After completion of task, row in `task_event` table will be updated.
+
+
+### Updates...
+In commit **35d0724** I was trying to solve the use case when there is a waiting state (signal or timer) before user task. In that case, if you restart the application when token is in a waiting state, the variable mapping (hash map) will disapear from memory and you cannot fetch customer and product references. Because of that, I decided to make a persistent variable store (as database table). If there is no references in hash map (memory) program will try to fetch references from store (database table).
+
+First insert in historic_variable_store happened on variable update. Also, the row for given process instance will be deleted when user task is created. Part of code: 
+```
+variableMapping.remove(historicTaskInstance.getProcessInstanceId());
+variableStoreService.deleteByProcessInstance(historicTaskInstance.getProcessInstanceId());
+```
 
 ### Running the project
 - Execute `schema.sql` file
