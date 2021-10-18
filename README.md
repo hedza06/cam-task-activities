@@ -52,9 +52,14 @@ After completion of task, row in `task_event` table will be updated.
 
 
 ### Updates...
-In commit **35d0724** I was trying to solve the use case when there is a waiting state (signal or timer) before user task. In that case, if you restart the application when token is in a waiting state, the variable mapping (hash map) will disapear from memory and you cannot fetch customer and product references. Because of that, I decided to make a persistent variable store (as database table). If there is no references in hash map (memory) program will try to fetch references from store (database table).
+In commit **35d0724** I was trying to solve the use case when there is a waiting state (signal or timer) before user 
+task. In that case, if you restart the application when token is in a waiting state, the variable mapping (hash map) 
+will disappear from memory and you cannot fetch customer and product references. 
+Because of that, I decided to make a persistent variable store (as database table). 
+If there are no references in hash map (memory) program will try to fetch references from store (database table).
 
-First insert in historic_variable_store happened on variable update. Also, the row for given process instance will be deleted when user task is created. Part of code: 
+First insert in historic_variable_store happened on variable updates. Also, the row for given process instance will 
+be deleted when user task is created. Part of code: 
 ```
 variableMapping.remove(historicTaskInstance.getProcessInstanceId());
 variableStoreService.deleteByProcessInstance(historicTaskInstance.getProcessInstanceId());
